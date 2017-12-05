@@ -1,0 +1,25 @@
+{
+    "name": "opdss/cisession",
+    "description": " a php session library",
+    "type"       : "library",
+    "keywords"   : ["CodeIgniter", "session"],
+    "homepage"   : "http://php.istimer.com/",
+    "license"    : "MIT",
+    "authors"    : [
+        {
+            "name": "opdss",
+            "email": "opdss@qq.com",
+            "homepage": "http://www.istimer.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Opdss\\Cisession\\": "./"
+        }
+    },
+    "require": {
+        "php": ">=5.3.0",
+        "Psr/Log" : "*"
+    }
+}
+
