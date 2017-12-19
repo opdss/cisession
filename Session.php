@@ -9,6 +9,7 @@
 namespace Opdss\Cisession;
 
 use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
 
 /**
  * Implementation of CodeIgniter session container.
@@ -128,10 +129,10 @@ class Session implements SessionInterface
 	 */
 	private function __construct($config, $driver)
 	{
-        $driver = !empty($driver) ? $driver : (isset($config['sessionDriver']) ? $config['sessionDriver'] : '');
+		$driver = !empty($driver) ? $driver : (isset($config['sessionDriver']) ? $config['sessionDriver'] : '');
 		if (!($sessionDriver = self::getHandler($driver))) {
-		    $this->log('error', 'Session '.$sessionDriver.' Not Found!');
-			throw new \Exception('Session '.$sessionDriver.' Not Found!');
+			$this->log('error', 'Session ' . $sessionDriver . ' Not Found!');
+			throw new \Exception('Session ' . $sessionDriver . ' Not Found!');
 		}
 		$this->driver = new $sessionDriver($config);
 
@@ -147,7 +148,6 @@ class Session implements SessionInterface
 		$this->cookiePath = $config['cookiePath'];
 		$this->cookieSecure = $config['cookieSecure'];
 
-		$this->start();
 	}
 
 	public static function getInstance($config, $handler = null)
@@ -168,7 +168,7 @@ class Session implements SessionInterface
 	/**
 	 * Initialize the session container and starts up the session.
 	 */
-	protected function start()
+	public function start()
 	{
 		if (self::isCli()) {
 			$this->log('debug', 'Session: Initialization under CLI aborted.');
@@ -179,7 +179,7 @@ class Session implements SessionInterface
 		}
 
 		if (!$this->driver instanceof \SessionHandlerInterface) {
-            $this->log('error', "Session: Handler '" . $this->sessionDriverName .
+			$this->log('error', "Session: Handler '" . $this->sessionDriverName .
 				"' doesn't implement SessionHandlerInterface. Aborting.");
 		}
 
@@ -215,7 +215,7 @@ class Session implements SessionInterface
 
 		$this->initVars();
 
-        $this->log('info', "Session: Class initialized using '" . $this->sessionDriverName . "' driver.");
+		$this->log('info', "Session: Class initialized using '" . $this->sessionDriverName . "' driver.");
 	}
 
 	//--------------------------------------------------------------------
@@ -881,23 +881,23 @@ class Session implements SessionInterface
 		return (PHP_SAPI === 'cli' || defined('STDIN'));
 	}
 
-    protected static function getHandler($handler)
+	protected static function getHandler($handler)
 	{
 		if (empty($handler)) {
 			return false;
 		}
 		$handlerPrefix = 'Opdss\\Cisession\\Handlers';
-		$handler = $handlerPrefix.'\\'.ucfirst($handler).'Handler';
+		$handler = $handlerPrefix . '\\' . ucfirst($handler) . 'Handler';
 		if (!class_exists($handler)) {
 			return false;
 		}
 		return $handler;
 	}
 
-    protected function log($type, $message, $context = array())
-    {
-        if ($this->logger && ($this->logger instanceof LoggerInterface)) {
-            $this->logger->$type($message, $context);
-        }
-    }
+	protected function log($type, $message, $context = array())
+	{
+		if ($this->logger && ($this->logger instanceof LoggerInterface)) {
+			$this->logger->$type($message, $context);
+		}
+	}
 }

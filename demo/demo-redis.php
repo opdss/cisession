@@ -26,7 +26,7 @@ $config = [
 ];
 
 $session = \Opdss\Cisession\Session::getInstance($config, 'redis');
-
+$session->start();
 $session->set('test', 'session_redis');
 $session->setFlashdata('flash', 'session_redis_flash');
 $session->setTempdata('temp', 'session_redis_temp', 300);

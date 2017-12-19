@@ -26,10 +26,10 @@ $config = [
 ];
 
 $session = \Opdss\Cisession\Session::getInstance($config);
-
-$session->set('test', 'session_memcache');
+$session->start();
+/*$session->set('test', 'session_memcache');
 $session->setFlashdata('flash', 'session_memcache_flash');
-$session->setTempdata('temp', 'session_memcache_temp', 300);
+$session->setTempdata('temp', 'session_memcache_temp', 300);*/
 var_dump($session->get('test'));
 var_dump($session->get('flash'));
 var_dump($session->get('temp'));

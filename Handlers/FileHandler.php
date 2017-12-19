@@ -52,7 +52,6 @@ class FileHandler extends BaseHandler implements \SessionHandlerInterface
 	public function __construct($config)
 	{
 		parent::__construct($config);
-
 		if (!empty($config['sessionSavePath'])) {
 			$this->savePath = rtrim($config['sessionSavePath'], '/\\');
 			ini_set('session.save_path', $config['sessionSavePath']);
@@ -90,7 +89,6 @@ class FileHandler extends BaseHandler implements \SessionHandlerInterface
 		$this->filePath = $this->savePath . '/'
 			. $name // we'll use the session cookie name as a prefix to avoid collisions
 			. ($this->matchIP ? md5($_SERVER['REMOTE_ADDR']) : '');
-
 		return true;
 	}
 
@@ -113,7 +111,6 @@ class FileHandler extends BaseHandler implements \SessionHandlerInterface
 			$this->fileNew = !file_exists($this->filePath . $sessionID);
 			if (($this->fileHandle = fopen($this->filePath . $sessionID, 'c+b')) === false) {
 				$this->log("error", "Session: Unable to open file '" . $this->filePath . $sessionID . "'.");
-
 				return false;
 			}
 

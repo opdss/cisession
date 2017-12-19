@@ -89,8 +89,7 @@ class MemcachedHandler extends BaseHandler implements \SessionHandlerInterface
 			$server_list[] = $server['host'] . ':' . $server['port'];
 		}
 
-		if (!preg_match_all('#,?([^,:]+)\:(\d{1,5})(?:\:(\d+))?#', $this->savePath, $matches, PREG_SET_ORDER)
-		) {
+		if (!preg_match_all('#,?([^,:]+)\:(\d{1,5})(?:\:(\d+))?#', $this->savePath, $matches, PREG_SET_ORDER)) {
 			$this->memcached = null;
 			$this->log("error", 'Session: Invalid Memcached save path format: ' . $this->savePath);
 

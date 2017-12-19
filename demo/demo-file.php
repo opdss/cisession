@@ -10,16 +10,18 @@ include '../vendor/autoload.php';
 
 $config = [
 	'sessionDriver' => 'file',
-	'sessionCookieName' => 'file_session',
+	'sessionCookieName' => 'sesscookname',
 	'sessionExpiration' => 7200,
 	//'sessionSavePath' => null,
-	'sessionSavePath' => './session',
-	'sessionMatchIP' => false,
-	'sessionTimeToUpdate' => 300,
+	//'sessionSavePath' => dirname(__FILE__).'/session',
+	'sessionSavePath' => './session', //尽量填写绝对路径
+	//'sessionMatchIP' => false,
+	'sessionMatchIP' => true,
+	'sessionTimeToUpdate' => 3,
 	//'sessionRegenerateDestroy' => false,
 	'sessionRegenerateDestroy' => true,
 	//'cookiePrefix' => '',
-	'cookiePrefix' => 'file',
+	'cookiePrefix' => 'fsess',
 	'cookieDomain' => '',
 	'cookiePath' => '/',
 	'cookieSecure' => false,
@@ -27,12 +29,7 @@ $config = [
 ];
 
 $session = \Opdss\Cisession\Session::getInstance($config, 'file');
-
-$session->set('test', 'session_file');
-$session->setFlashdata('flash', 'session_file_flash');
-$session->setTempdata('temp', 'session_file_temp', 300);
-var_dump($session->get('test'));
-var_dump($session->get('flash'));
-var_dump(1111111111);
-var_dump(\Opdss\Cisession\Session::getInstance($config, 'file')->get('test'));
-var_dump(\Opdss\Cisession\Session::getInstance($config, 'file')->get('temp'));
+$session->start();
+//$session->set('test', 'test_data_session_file');
+//$session->set('test11111', '2222222222222');
+var_dump($session->get());
