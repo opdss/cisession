@@ -27,7 +27,7 @@ class MemcachedHandler extends BaseHandler implements \SessionHandlerInterface
 	 *
 	 * @var    string
 	 */
-	protected $keyPrefix = 'ci_session:';
+	protected $keyPrefix = 'cisession:';
 
 	/**
 	 * Lock key
@@ -36,34 +36,27 @@ class MemcachedHandler extends BaseHandler implements \SessionHandlerInterface
 	 */
 	protected $lockKey;
 
-	/**
-	 * Number of seconds until the session ends.
-	 *
-	 * @var int
-	 */
-	protected $sessionExpiration = 7200;
 
 	//--------------------------------------------------------------------
 
 	/**
 	 * Constructor
 	 *
-	 * @param BaseConfig $config
+	 * @param array $config
 	 * @throws \Exception
 	 */
 	public function __construct($config)
 	{
 		parent::__construct($config);
 
-		if (empty($this->savePath)) {
+		if (empty($this->sessionSavePath)) {
 			throw new \Exception('Session: No Memcached save path configured.');
 		}
 
-		if ($this->matchIP === true) {
+		if ($this->sessionMatchIP === true) {
 			$this->keyPrefix .= $_SERVER['REMOTE_ADDR'] . ':';
 		}
 
-		$this->sessionExpiration = $config['sessionExpiration'];
 	}
 
 	//--------------------------------------------------------------------
@@ -89,9 +82,9 @@ class MemcachedHandler extends BaseHandler implements \SessionHandlerInterface
 			$server_list[] = $server['host'] . ':' . $server['port'];
 		}
 
-		if (!preg_match_all('#,?([^,:]+)\:(\d{1,5})(?:\:(\d+))?#', $this->savePath, $matches, PREG_SET_ORDER)) {
+		if (!preg_match_all('#,?([^,:]+)\:(\d{1,5})(?:\:(\d+))?#', $this->sessionSavePath, $matches, PREG_SET_ORDER)) {
 			$this->memcached = null;
-			$this->log("error", 'Session: Invalid Memcached save path format: ' . $this->savePath);
+			$this->log("error", 'Session: Invalid Memcached save path format: ' . $this->sessionSavePath);
 
 			return false;
 		}
@@ -207,12 +200,9 @@ class MemcachedHandler extends BaseHandler implements \SessionHandlerInterface
 			if (!$this->memcached->quit()) {
 				return false;
 			}
-
 			$this->memcached = null;
-
 			return true;
 		}
-
 		return false;
 	}
 

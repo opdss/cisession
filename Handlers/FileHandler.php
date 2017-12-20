@@ -14,14 +14,6 @@ namespace Opdss\Cisession\Handlers;
  */
 class FileHandler extends BaseHandler implements \SessionHandlerInterface
 {
-
-	/**
-	 * Where to save the session files to.
-	 *
-	 * @var string
-	 */
-	protected $savePath;
-
 	/**
 	 * The file handle
 	 *
@@ -32,7 +24,7 @@ class FileHandler extends BaseHandler implements \SessionHandlerInterface
 	/**
 	 * File Name
 	 *
-	 * @var resource
+	 * @var string
 	 */
 	protected $filePath;
 
@@ -47,16 +39,16 @@ class FileHandler extends BaseHandler implements \SessionHandlerInterface
 
 	/**
 	 * Constructor
-	 * @param BaseConfig $config
+	 * @param array $config
 	 */
-	public function __construct($config)
+	public function __construct(array $config)
 	{
 		parent::__construct($config);
-		if (!empty($config['sessionSavePath'])) {
-			$this->savePath = rtrim($config['sessionSavePath'], '/\\');
-			ini_set('session.save_path', $config['sessionSavePath']);
+		if (!empty($this->sessionSavePath)) {
+			$this->sessionSavePath = rtrim($this->sessionSavePath, '/\\');
+			ini_set('session.save_path', $this->sessionSavePath);
 		} else {
-			$this->savePath = rtrim(ini_get('session.save_path'), '/\\');
+			$this->sessionSavePath = rtrim(ini_get('session.save_path'), '/\\');
 		}
 	}
 
@@ -77,18 +69,16 @@ class FileHandler extends BaseHandler implements \SessionHandlerInterface
 	{
 		if (!is_dir($savePath)) {
 			if (!mkdir($savePath, 0700, true)) {
-				throw new \Exception("Session: Configured save path '" . $this->savePath .
-					"' is not a directory, doesn't exist or cannot be created.");
+				throw new \Exception("Session: Configured save path '" . $this->sessionSavePath . "' is not a directory, doesn't exist or cannot be created.");
 			}
 		} elseif (!is_writable($savePath)) {
-			throw new \Exception("Session: Configured save path '" . $this->savePath .
-				"' is not writable by the PHP process.");
+			throw new \Exception("Session: Configured save path '" . $this->sessionSavePath . "' is not writable by the PHP process.");
 		}
 
-		$this->savePath = $savePath;
-		$this->filePath = $this->savePath . '/'
+		$this->sessionSavePath = $savePath;
+		$this->filePath = $this->sessionSavePath . '/'
 			. $name // we'll use the session cookie name as a prefix to avoid collisions
-			. ($this->matchIP ? md5($_SERVER['REMOTE_ADDR']) : '');
+			. ($this->sessionMatchIP ? md5($_SERVER['REMOTE_ADDR']) : '');
 		return true;
 	}
 
@@ -118,7 +108,6 @@ class FileHandler extends BaseHandler implements \SessionHandlerInterface
 				$this->log("error", "Session: Unable to obtain lock for file '" . $this->filePath . $sessionID . "'.");
 				fclose($this->fileHandle);
 				$this->fileHandle = null;
-
 				return false;
 			}
 
@@ -128,7 +117,6 @@ class FileHandler extends BaseHandler implements \SessionHandlerInterface
 			if ($this->fileNew) {
 				chmod($this->filePath . $sessionID, 0600);
 				$this->fingerprint = md5('');
-
 				return '';
 			}
 		} else {
@@ -140,12 +128,9 @@ class FileHandler extends BaseHandler implements \SessionHandlerInterface
 			if (($buffer = fread($this->fileHandle, $length - $read)) === false) {
 				break;
 			}
-
 			$session_data .= $buffer;
 		}
-
 		$this->fingerprint = md5($session_data);
-
 		return $session_data;
 	}
 
@@ -214,9 +199,7 @@ class FileHandler extends BaseHandler implements \SessionHandlerInterface
 		if (is_resource($this->fileHandle)) {
 			flock($this->fileHandle, LOCK_UN);
 			fclose($this->fileHandle);
-
 			$this->fileHandle = $this->fileNew = $this->sessionID = null;
-
 			return true;
 		}
 
@@ -240,10 +223,8 @@ class FileHandler extends BaseHandler implements \SessionHandlerInterface
 			return file_exists($this->filePath . $session_id) ? (unlink($this->filePath . $session_id) && $this->destroyCookie()) : true;
 		} elseif ($this->filePath !== null) {
 			clearstatcache();
-
 			return file_exists($this->filePath . $session_id) ? (unlink($this->filePath . $session_id) && $this->destroyCookie()) : true;
 		}
-
 		return false;
 	}
 
@@ -260,26 +241,25 @@ class FileHandler extends BaseHandler implements \SessionHandlerInterface
 	 */
 	public function gc($maxlifetime)
 	{
-		if (!is_dir($this->savePath) || ($directory = opendir($this->savePath)) === false) {
-			$this->log("debug", "Session: Garbage collector couldn't list files under directory '" . $this->savePath . "'.");
-
+		if (!is_dir($this->sessionSavePath) || ($directory = opendir($this->sessionSavePath)) === false) {
+			$this->log("debug", "Session: Garbage collector couldn't list files under directory '" . $this->sessionSavePath . "'.");
 			return false;
 		}
 
 		$ts = time() - $maxlifetime;
 
 		$pattern = sprintf(
-			'/^%s[0-9a-f]{%d}$/', preg_quote($this->cookieName, '/'), ($this->matchIP === true ? 72 : 40)
+			'/^%s[0-9a-f]{%d}$/', preg_quote($this->sessionCookieName, '/'), ($this->sessionMatchIP === true ? 72 : 40)
 		);
 
 		while (($file = readdir($directory)) !== false) {
 			// If the filename doesn't match this pattern, it's either not a session file or is not ours
-			if (!preg_match($pattern, $file) || !is_file($this->savePath . '/' . $file) || ($mtime = filemtime($this->savePath . '/' . $file)) === false || $mtime > $ts
+			if (!preg_match($pattern, $file) || !is_file($this->sessionSavePath . '/' . $file) || ($mtime = filemtime($this->sessionSavePath . '/' . $file)) === false || $mtime > $ts
 			) {
 				continue;
 			}
 
-			unlink($this->savePath . '/' . $file);
+			unlink($this->sessionSavePath . '/' . $file);
 		}
 
 		closedir($directory);

@@ -10,26 +10,26 @@ include '../vendor/autoload.php';
 
 $config = [
 	'sessionDriver' => 'file',
-	'sessionCookieName' => 'sesscookname',
+	'sessionCookieName' => 'file_session',
 	'sessionExpiration' => 7200,
 	//'sessionSavePath' => null,
-	//'sessionSavePath' => dirname(__FILE__).'/session',
-	'sessionSavePath' => './session', //尽量填写绝对路径
-	//'sessionMatchIP' => false,
-	'sessionMatchIP' => true,
+	'sessionSavePath' => dirname(__FILE__).'/session', //绝对路径
+	'sessionMatchIP' => false,
+	//'sessionMatchIP' => true,
 	'sessionTimeToUpdate' => 3,
 	//'sessionRegenerateDestroy' => false,
 	'sessionRegenerateDestroy' => true,
-	//'cookiePrefix' => '',
-	'cookiePrefix' => 'fsess',
+
 	'cookieDomain' => '',
-	'cookiePath' => '/',
-	'cookieSecure' => false,
-	'cookieHTTPOnly' => false,
+	'cookiePath' => '/demo',
+	'cookieSecure' => true,
+	'cookieHTTPOnly' => true,
 ];
 
 $session = \Opdss\Cisession\Session::getInstance($config, 'file');
 $session->start();
-//$session->set('test', 'test_data_session_file');
-//$session->set('test11111', '2222222222222');
-var_dump($session->get());
+$session->set('test', 'test_data_session_file');
+$session->set('test11111', '2222222222222');
+$session->set(array('a'=>1, 'b'=>2));
+$session->set('ab', array('a'=>1, 'b'=>2));
+var_dump($session->ab['b']);

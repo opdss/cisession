@@ -8,6 +8,7 @@
 
 namespace Opdss\Cisession;
 
+use Opdss\Cisession\Handlers\BaseHandler;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 
@@ -22,12 +23,15 @@ class Session implements SessionInterface
 
 	use LoggerAwareTrait;
 
+	/**
+	 * @var $this
+	 */
 	private static $ins;
 
 	/**
 	 * Instance of the driver to use.
 	 *
-	 * @var HandlerInterface
+	 * @var BaseHandler
 	 */
 	protected $driver;
 
@@ -35,13 +39,13 @@ class Session implements SessionInterface
 	 * The storage driver to use: files, database, redis, memcached
 	 * @var string
 	 */
-	protected $sessionDriverName;
+	protected $sessionDriver;
 
 	/**
 	 * The session cookie name, must contain only [0-9a-z_-] characters.
 	 * @var string
 	 */
-	protected $sessionCookieName = 'ci_session';
+	protected $sessionCookieName = 'cisession';
 
 	/**
 	 * The number of SECONDS you want the session to last.
@@ -108,7 +112,8 @@ class Session implements SessionInterface
 	 * Cookie will only be set if a secure HTTPS connection exists.
 	 * @var bool
 	 */
-	protected $cookieSecure = false;
+	protected $cookieSecure = null;
+	protected $cookieHTTPOnly = null;
 	protected $sidRegexp;
 
 	/**
@@ -129,27 +134,42 @@ class Session implements SessionInterface
 	 */
 	private function __construct($config, $driver)
 	{
-		$driver = !empty($driver) ? $driver : (isset($config['sessionDriver']) ? $config['sessionDriver'] : '');
+		foreach (array(
+			'sessionDriver',
+			'sessionCookieName',
+			'sessionExpiration',
+			'sessionSavePath',
+			'sessionMatchIP',
+			'sessionMatchIP',
+			'sessionTimeToUpdate',
+			'sessionRegenerateDestroy',
+
+			'cookieDomain',
+			'cookiePath',
+			'cookieSecure',
+			'cookieHTTPOnly',
+		         ) as $key) {
+			if (isset($config[$key])) {
+				$this->$key = $config[$key];
+			}
+		}
+
+		$driver = !empty($driver) ? $driver : $this->sessionDriver;
 		if (!($sessionDriver = self::getHandler($driver))) {
 			$this->log('error', 'Session ' . $sessionDriver . ' Not Found!');
 			throw new \Exception('Session ' . $sessionDriver . ' Not Found!');
 		}
 		$this->driver = new $sessionDriver($config);
 
-		$this->sessionDriverName = $sessionDriver;
-		$this->sessionCookieName = $config['sessionCookieName'];
-		$this->sessionExpiration = $config['sessionExpiration'];
-		$this->sessionSavePath = $config['sessionSavePath'];
-		$this->sessionMatchIP = $config['sessionMatchIP'];
-		$this->sessionTimeToUpdate = $config['sessionTimeToUpdate'];
-		$this->sessionRegenerateDestroy = $config['sessionRegenerateDestroy'];
-
-		$this->cookieDomain = $config['cookieDomain'];
-		$this->cookiePath = $config['cookiePath'];
-		$this->cookieSecure = $config['cookieSecure'];
-
+		$this->sessionDriver = $sessionDriver;
 	}
 
+	/**
+	 * 获取实例
+	 * @param $config
+	 * @param null $handler
+	 * @return Session
+	 */
 	public static function getInstance($config, $handler = null)
 	{
 		if (!self::$ins || !(self::$ins instanceof SessionInterface)) {
@@ -158,6 +178,9 @@ class Session implements SessionInterface
 		return self::$ins;
 	}
 
+	/**
+	 * 防止clone
+	 */
 	private function __clone()
 	{
 		// TODO: Implement __clone() method.
@@ -179,8 +202,8 @@ class Session implements SessionInterface
 		}
 
 		if (!$this->driver instanceof \SessionHandlerInterface) {
-			$this->log('error', "Session: Handler '" . $this->sessionDriverName .
-				"' doesn't implement SessionHandlerInterface. Aborting.");
+			$this->log('error', "Session: Handler '" . $this->sessionDriver . "' doesn't implement SessionHandlerInterface. Aborting.");
+			return;
 		}
 
 		$this->configure();
@@ -215,7 +238,7 @@ class Session implements SessionInterface
 
 		$this->initVars();
 
-		$this->log('info', "Session: Class initialized using '" . $this->sessionDriverName . "' driver.");
+		$this->log('info', "Session: Class initialized using '" . $this->sessionDriver . "' driver.");
 	}
 
 	//--------------------------------------------------------------------
@@ -230,7 +253,7 @@ class Session implements SessionInterface
 	public function stop()
 	{
 		setcookie(
-			$this->sessionCookieName, session_id(), 1, $this->cookiePath, $this->cookieDomain, $this->cookieSecure, true
+			$this->sessionCookieName, session_id(), 1, $this->cookiePath, $this->cookieDomain, $this->cookieSecure, $this->cookieHTTPOnly
 		);
 
 		session_regenerate_id(true);
@@ -252,7 +275,7 @@ class Session implements SessionInterface
 		}
 
 		session_set_cookie_params(
-			$this->sessionExpiration, $this->cookiePath, $this->cookieDomain, $this->cookieSecure, true // HTTP only; Yes, this is intentional and not configurable for security reasons.
+			$this->sessionExpiration, $this->cookiePath, $this->cookieDomain, $this->cookieSecure, $this->cookieHTTPOnly // HTTP only; Yes, this is intentional and not configurable for security reasons.
 		);
 
 		if (empty($this->sessionExpiration)) {
@@ -493,7 +516,6 @@ class Session implements SessionInterface
 			foreach ($key as $k) {
 				unset($_SESSION[$k]);
 			}
-
 			return;
 		}
 
@@ -869,18 +891,26 @@ class Session implements SessionInterface
 	protected function setCookie()
 	{
 		setcookie(
-			$this->sessionCookieName, session_id(), (empty($this->sessionExpiration) ? 0 : time() + $this->sessionExpiration), $this->cookiePath, $this->cookieDomain, $this->cookieSecure, true
+			$this->sessionCookieName, session_id(), (empty($this->sessionExpiration) ? 0 : time() + $this->sessionExpiration), $this->cookiePath, $this->cookieDomain, $this->cookieSecure, $this->cookieHTTPOnly
 		);
 	}
 
 	//--------------------------------------------------------------------
 
-
+	/**
+	 * 判断是否命令行模式
+	 * @return bool
+	 */
 	public static function isCli()
 	{
 		return (PHP_SAPI === 'cli' || defined('STDIN'));
 	}
 
+	/**
+	 * 获取session 驱动类
+	 * @param $handler
+	 * @return bool|string
+	 */
 	protected static function getHandler($handler)
 	{
 		if (empty($handler)) {
@@ -894,6 +924,18 @@ class Session implements SessionInterface
 		return $handler;
 	}
 
+	protected function setLogger($logger)
+	{
+		$this->logger = $logger;
+		$this->driver->setLogger($logger);
+	}
+
+	/**
+	 * 记录日志
+	 * @param $type
+	 * @param $message
+	 * @param array $context
+	 */
 	protected function log($type, $message, $context = array())
 	{
 		if ($this->logger && ($this->logger instanceof LoggerInterface)) {

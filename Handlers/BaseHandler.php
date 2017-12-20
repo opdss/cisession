@@ -22,85 +22,98 @@ abstract class BaseHandler implements \SessionHandlerInterface
 	/**
 	 * The Data fingerprint.
 	 *
-	 * @var bool
+	 * @var string
 	 */
 	protected $fingerprint;
 
 	/**
 	 * Lock placeholder.
 	 *
-	 * @var mixed
+	 * @var bool
 	 */
 	protected $lock = false;
 
-	/**
-	 * Cookie prefix
-	 *
-	 * @var type
-	 */
-	protected $cookiePrefix = '';
 
 	/**
 	 * Cookie domain
 	 *
-	 * @var type
+	 * @var string
 	 */
 	protected $cookieDomain = '';
 
 	/**
 	 * Cookie path
-	 * @var type
+	 * @var string
 	 */
 	protected $cookiePath = '/';
 
 	/**
 	 * Cookie secure?
 	 *
-	 * @var type
+	 * @var bool
 	 */
 	protected $cookieSecure = false;
 
 	/**
-	 * Cookie name to use
-	 * @var type
+	 * @var null
 	 */
-	protected $cookieName;
+	protected $cookieHTTPOnly = null;
+
+	/**
+	 * Cookie name to use
+	 * @var string
+	 */
+	protected $sessionCookieName;
 
 	/**
 	 * Match IP addresses for cookies?
 	 *
-	 * @var type
+	 * @var bool
 	 */
-	protected $matchIP = false;
+	protected $sessionMatchIP = false;
 
 	/**
 	 * Current session ID
-	 * @var type
+	 * @var string
 	 */
 	protected $sessionID;
 
 	/**
 	 * The 'save path' for the session
 	 * varies between
-	 * @var mixed
+	 * @var string|array
 	 */
-	protected $savePath;
+	protected $sessionSavePath;
 
+	/**
+	 * Number of seconds until the session ends.
+	 *
+	 * @var int
+	 */
+	protected $sessionExpiration = 7200;
 	//--------------------------------------------------------------------
 
 	/**
 	 * Constructor
-	 * @param BaseConfig $config
+	 * @param array $config
 	 */
-	public function __construct($config)
+	public function __construct(array $config)
 	{
-		$this->cookiePrefix = $config['cookiePrefix'];
-		$this->cookieDomain = $config['cookieDomain'];
-		$this->cookiePath = $config['cookiePath'];
-		$this->cookieSecure = $config['cookieSecure'];
-		$this->cookieName = $config['sessionCookieName'];
-		$this->matchIP = $config['sessionMatchIP'];
-		$this->savePath = $config['sessionSavePath'];
+		foreach (array(
+					 'cookieDomain',
+			         'cookiePath',
+			         'cookieSecure',
+			         'cookieHTTPOnly',
+			         'sessionCookieName',
+			         'sessionMatchIP',
+			         'sessionSavePath',
+		         ) as $key) {
+			if (isset($config[$key])) {
+				$this->$key = $config[$key];
+			}
+		}
+
+		isset($config['sessionExpiration']) AND $config['sessionExpiration']>0 AND $this->sessionExpiration =  $config['sessionExpiration'];
 	}
 
 	//--------------------------------------------------------------------
@@ -114,7 +127,7 @@ abstract class BaseHandler implements \SessionHandlerInterface
 	protected function destroyCookie()
 	{
 		return setcookie(
-			$this->cookieName, null, 1, $this->cookiePath, $this->cookieDomain, $this->cookieSecure, true
+			$this->sessionCookieName, null, 1, $this->cookiePath, $this->cookieDomain, $this->cookieSecure, $this->cookieHTTPOnly
 		);
 	}
 
@@ -145,7 +158,6 @@ abstract class BaseHandler implements \SessionHandlerInterface
 	protected function releaseLock()
 	{
 		$this->lock = false;
-
 		return true;
 	}
 
@@ -166,15 +178,23 @@ abstract class BaseHandler implements \SessionHandlerInterface
 	 */
 	protected function fail()
 	{
-		ini_set('session.save_path', $this->savePath);
+		ini_set('session.save_path', $this->sessionSavePath);
 		return false;
 	}
 
+	/**
+	 * 日志记录
+	 * @param $type
+	 * @param $message
+	 * @param array $context
+	 * @return mixed
+	 */
 	protected function log($type, $message, $context = array())
 	{
-		echo $message.PHP_EOL;
 		if ($this->logger && ($this->logger instanceof LoggerInterface)) {
 			$this->logger->$type($message, $context);
+		} else {
+			echo $message.PHP_EOL;
 		}
 	}
 }

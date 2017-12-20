@@ -27,7 +27,7 @@ class RedisHandler extends BaseHandler implements \SessionHandlerInterface
 	 *
 	 * @var    string
 	 */
-	protected $keyPrefix = 'ci_session:';
+	protected $keyPrefix = 'cisession:';
 
 	/**
 	 * Lock key
@@ -43,12 +43,6 @@ class RedisHandler extends BaseHandler implements \SessionHandlerInterface
 	 */
 	protected $keyExists = FALSE;
 
-	/**
-	 * Number of seconds until the session ends.
-	 *
-	 * @var int
-	 */
-	protected $sessionExpiration = 7200;
 
 	//--------------------------------------------------------------------
 
@@ -62,12 +56,12 @@ class RedisHandler extends BaseHandler implements \SessionHandlerInterface
 	{
 		parent::__construct($config);
 
-		if (empty($this->savePath)) {
+		if (empty($this->sessionSavePath)) {
 			throw new \Exception('Session: No Redis save path configured.');
-		} elseif (preg_match('#(?:tcp://)?([^:?]+)(?:\:(\d+))?(\?.+)?#', $this->savePath, $matches)) {
+		} elseif (preg_match('#(?:tcp://)?([^:?]+)(?:\:(\d+))?(\?.+)?#', $this->sessionSavePath, $matches)) {
 			isset($matches[3]) OR $matches[3] = ''; // Just to avoid undefined index notices below
 
-			$this->savePath = [
+			$this->sessionSavePath = [
 				'host' => $matches[1],
 				'port' => empty($matches[2]) ? null : $matches[2],
 				'password' => preg_match('#auth=([^\s&]+)#', $matches[3], $match) ? $match[1] : null,
@@ -77,14 +71,13 @@ class RedisHandler extends BaseHandler implements \SessionHandlerInterface
 
 			preg_match('#prefix=([^\s&]+)#', $matches[3], $match) && $this->keyPrefix = $match[1];
 		} else {
-			throw new \Exception('Session: Invalid Redis save path format: ' . $this->savePath);
+			throw new \Exception('Session: Invalid Redis save path format: ' . $this->sessionSavePath);
 		}
 
-		if ($this->matchIP === true) {
+		if ($this->sessionMatchIP === true) {
 			$this->keyPrefix .= $_SERVER['REMOTE_ADDR'] . ':';
 		}
 
-		$this->sessionExpiration = $config['sessionExpiration'];
 	}
 
 	//--------------------------------------------------------------------
@@ -100,18 +93,18 @@ class RedisHandler extends BaseHandler implements \SessionHandlerInterface
 	 */
 	public function open($save_path, $name)
 	{
-		if (empty($this->savePath)) {
+		if (empty($this->sessionSavePath)) {
 			return FALSE;
 		}
 
 		$redis = new \Redis();
 
-		if (!$redis->connect($this->savePath['host'], $this->savePath['port'], $this->savePath['timeout'])) {
+		if (!$redis->connect($this->sessionSavePath['host'], $this->sessionSavePath['port'], $this->sessionSavePath['timeout'])) {
 			$this->log("error", 'Session: Unable to connect to Redis with the configured settings.');
-		} elseif (isset($this->savePath['password']) && !$redis->auth($this->savePath['password'])) {
+		} elseif (isset($this->sessionSavePath['password']) && !$redis->auth($this->sessionSavePath['password'])) {
 			$this->log("error", 'Session: Unable to authenticate to Redis instance.');
-		} elseif (isset($this->savePath['database']) && !$redis->select($this->savePath['database'])) {
-			$this->log("error", 'Session: Unable to select Redis database with index ' . $this->savePath['database']);
+		} elseif (isset($this->sessionSavePath['database']) && !$redis->select($this->sessionSavePath['database'])) {
+			$this->log("error", 'Session: Unable to select Redis database with index ' . $this->sessionSavePath['database']);
 		} else {
 			$this->redis = $redis;
 			return TRUE;
