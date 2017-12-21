@@ -28,6 +28,12 @@ class Session implements SessionInterface
 	 */
 	private static $ins;
 
+    /**
+     * p配置参数
+     * @var array
+     */
+	protected $config;
+
 	/**
 	 * Instance of the driver to use.
 	 *
@@ -155,11 +161,9 @@ class Session implements SessionInterface
 		}
 		$driver = !empty($driver) ? $driver : $this->sessionDriver;
 		if (!($sessionDriver = self::getHandler($driver))) {
-			$this->log('error', 'Session ' . $sessionDriver . ' Not Found!');
 			throw new \Exception('Session ' . $sessionDriver . ' Not Found!');
 		}
-		$this->driver = new $sessionDriver($config);
-
+        $this->config = $config;
 		$this->sessionDriver = $sessionDriver;
 	}
 
@@ -200,10 +204,14 @@ class Session implements SessionInterface
 			return;
 		}
 
+        $this->driver = new $this->sessionDriver($this->config);
+
 		if (!$this->driver instanceof \SessionHandlerInterface) {
 			$this->log('error', "Session: Handler '" . $this->sessionDriver . "' doesn't implement SessionHandlerInterface. Aborting.");
 			return;
 		}
+
+        $this->logger and $this->driver->setLogger($this->logger);
 
 		$this->configure();
 
@@ -921,12 +929,6 @@ class Session implements SessionInterface
 			return false;
 		}
 		return $handler;
-	}
-
-	protected function setLogger($logger)
-	{
-		$this->logger = $logger;
-		$this->driver->setLogger($logger);
 	}
 
 	/**
