@@ -153,7 +153,6 @@ class Session implements SessionInterface
 				$this->$key = $config[$key];
 			}
 		}
-
 		$driver = !empty($driver) ? $driver : $this->sessionDriver;
 		if (!($sessionDriver = self::getHandler($driver))) {
 			$this->log('error', 'Session ' . $sessionDriver . ' Not Found!');
@@ -219,7 +218,7 @@ class Session implements SessionInterface
 		}
 
 		$this->startSession();
-
+		
 		// Is session ID auto-regeneration configured? (ignoring ajax requests)
 		if ((empty($_SERVER['HTTP_X_REQUESTED_WITH']) ||
 				strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') && ($regenerate_time = $this->sessionTimeToUpdate) > 0
