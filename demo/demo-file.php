@@ -16,7 +16,7 @@ $config = [
 	'sessionSavePath' => dirname(__FILE__).'/session', //绝对路径
 	'sessionMatchIP' => false,
 	//'sessionMatchIP' => true,
-	'sessionTimeToUpdate' => 300,
+	'sessionTimeToUpdate' => 3,
 	//'sessionRegenerateDestroy' => false,
 	'sessionRegenerateDestroy' => true,
 

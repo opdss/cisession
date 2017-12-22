@@ -18,7 +18,7 @@ $config = [
 	'sessionMatchIP' => false,
 	'sessionTimeToUpdate' => 300,
 	'sessionRegenerateDestroy' => false,
-	'cookiePrefix' => '',
+
 	'cookieDomain' => '',
 	'cookiePath' => '/',
 	'cookieSecure' => false,
