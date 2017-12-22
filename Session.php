@@ -28,10 +28,10 @@ class Session implements SessionInterface
 	 */
 	private static $ins;
 
-    /**
-     * p配置参数
-     * @var array
-     */
+	/**
+	 * p配置参数
+	 * @var array
+	 */
 	protected $config;
 
 	/**
@@ -141,29 +141,28 @@ class Session implements SessionInterface
 	private function __construct($config, $driver)
 	{
 		foreach (array(
-			'sessionDriver',
-			'sessionCookieName',
-			'sessionExpiration',
-			'sessionSavePath',
-			'sessionMatchIP',
-			'sessionMatchIP',
-			'sessionTimeToUpdate',
-			'sessionRegenerateDestroy',
+			         'sessionDriver',
+			         'sessionCookieName',
+			         'sessionExpiration',
+			         'sessionSavePath',
+			         'sessionMatchIP',
+			         'sessionTimeToUpdate',
+			         'sessionRegenerateDestroy',
 
-			'cookieDomain',
-			'cookiePath',
-			'cookieSecure',
-			'cookieHTTPOnly',
+			         'cookieDomain',
+			         'cookiePath',
+			         'cookieSecure',
+			         'cookieHTTPOnly',
 		         ) as $key) {
 			if (isset($config[$key])) {
 				$this->$key = $config[$key];
 			}
 		}
-		$driver = !empty($driver) ? $driver : $this->sessionDriver;
-		if (!($sessionDriver = self::getHandler($driver))) {
+
+		if (!($sessionDriver = self::getHandler(!empty($driver) ? $driver : $this->sessionDriver))) {
 			throw new \Exception('Session ' . $sessionDriver . ' Not Found!');
 		}
-        $this->config = $config;
+		$this->config = $config;
 		$this->sessionDriver = $sessionDriver;
 	}
 
@@ -204,14 +203,14 @@ class Session implements SessionInterface
 			return;
 		}
 
-        $this->driver = new $this->sessionDriver($this->config);
+		$this->driver = new $this->sessionDriver($this->config);
 
 		if (!$this->driver instanceof \SessionHandlerInterface) {
 			$this->log('error', "Session: Handler '" . $this->sessionDriver . "' doesn't implement SessionHandlerInterface. Aborting.");
 			return;
 		}
 
-        $this->logger and $this->driver->setLogger($this->logger);
+		$this->logger and $this->driver->setLogger($this->logger);
 
 		$this->configure();
 
@@ -226,7 +225,7 @@ class Session implements SessionInterface
 		}
 
 		$this->startSession();
-		
+
 		// Is session ID auto-regeneration configured? (ignoring ajax requests)
 		if ((empty($_SERVER['HTTP_X_REQUESTED_WITH']) ||
 				strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') && ($regenerate_time = $this->sessionTimeToUpdate) > 0
@@ -263,7 +262,7 @@ class Session implements SessionInterface
 			$this->sessionCookieName, session_id(), 1, $this->cookiePath, $this->cookieDomain, $this->cookieSecure, $this->cookieHTTPOnly
 		);
 
-		session_regenerate_id(true);
+		session_regenerate_id($this->sessionRegenerateDestroy);
 	}
 
 	//--------------------------------------------------------------------
