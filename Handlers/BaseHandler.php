@@ -193,8 +193,6 @@ abstract class BaseHandler implements \SessionHandlerInterface
 	{
 		if ($this->logger && ($this->logger instanceof LoggerInterface)) {
 			$this->logger->$type($message, $context);
-		} else {
-			echo $message.PHP_EOL;
 		}
 	}
 }
