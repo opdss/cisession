@@ -49,6 +49,8 @@ class MemcachedHandler extends BaseHandler implements \SessionHandlerInterface
 	{
 		parent::__construct($config);
 
+		isset($config['sessionKeyPrefix']) AND $this->keyPrefix = $config['sessionKeyPrefix'];
+
 		if (empty($this->sessionSavePath)) {
 			throw new \Exception('Session: No Memcached save path configured.');
 		}

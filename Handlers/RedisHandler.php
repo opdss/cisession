@@ -56,6 +56,8 @@ class RedisHandler extends BaseHandler implements \SessionHandlerInterface
 	{
 		parent::__construct($config);
 
+		isset($config['sessionKeyPrefix']) AND $this->keyPrefix = $config['sessionKeyPrefix'];
+
 		if (empty($this->sessionSavePath)) {
 			throw new \Exception('Session: No Redis save path configured.');
 		} elseif (preg_match('#(?:tcp://)?([^:?]+)(?:\:(\d+))?(\?.+)?#', $this->sessionSavePath, $matches)) {
